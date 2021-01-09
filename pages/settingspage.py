@@ -62,7 +62,7 @@ class SettingsPage(QtWidgets.QWidget):
                                                  "Webhook")
         
         self.savesettings_btn = QtWidgets.QPushButton(self.settings_card)
-        self.savesettings_btn.setGeometry(QtCore.QRect(190, 475, 86, 32))
+        self.savesettings_btn.setGeometry(QtCore.QRect(190, 510, 86, 32))
         self.savesettings_btn.setFont(self.small_font)
         self.savesettings_btn.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.savesettings_btn.setStyleSheet("color: #FFFFFF;background-color: {};border-radius: 10px;border: 1px solid #2e2d2d;".format(globalStyles["primary"]))
@@ -79,29 +79,31 @@ class SettingsPage(QtWidgets.QWidget):
         self.buy_one_checkbox = self.create_checkbox(QtCore.QRect(30, 250, 221, 20), "Stop All after success")
         self.dont_buy_checkbox = self.create_checkbox(QtCore.QRect(30, 280, 400, 20),
                                                       "Don't actually buy items. (Used for dev and testing)")
-        self.random_delay_start = self.create_edit(self.settings_card, QtCore.QRect(30, 310, 235, 20),
+        self.notify_only_checkbox = self.create_checkbox(QtCore.QRect(30, 310, 400, 20),
+                                                      "Send Email Notification Only. (Gamestop Only)")
+        self.random_delay_start = self.create_edit(self.settings_card, QtCore.QRect(30, 340, 235, 20),
                                                    self.small_font, "Random Start Delay (Default is 10ms)")
-        self.random_delay_stop = self.create_edit(self.settings_card, QtCore.QRect(30, 335, 235, 20),
+        self.random_delay_stop = self.create_edit(self.settings_card, QtCore.QRect(30, 365, 235, 20),
                                                   self.small_font, "Random Stop Delay (Default is 40ms)")
         self.proxies_header = self.create_header(self.settingspage, QtCore.QRect(30, 10, 81, 31),
                                                  self.create_font("Arial", 22), "Settings")
-        self.bestbuy_user_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 310, 235, 20),
+        self.bestbuy_user_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 340, 235, 20),
                                                  self.small_font, "Bestbuy.com Username (Email)")
-        self.bestbuy_pass_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 335, 235, 20),
+        self.bestbuy_pass_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 365, 235, 20),
                                                  self.small_font, "Bestbuy.com Password")
-        self.target_user_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 365, 235, 20),
+        self.target_user_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 395, 235, 20),
                                                  self.small_font, "Target.com Username (Email/Cell #)")
-        self.target_pass_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 390, 235, 20),
+        self.target_pass_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 420, 235, 20),
                                                  self.small_font, "Target.com Password")
-        self.gamestop_user_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 365, 235, 20),
+        self.gamestop_user_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 395, 235, 20),
                                                  self.small_font, "Gamestop.com Username (Email)")
-        self.gamestop_pass_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 390, 235, 20),
+        self.gamestop_pass_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 420, 235, 20),
                                                  self.small_font, "Gamestop.com Password")
-        self.gmail_account_email_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 420, 235, 20),
+        self.gmail_account_email_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 450, 235, 20),
                                                  self.small_font, "Gmail Account Email")
-        self.gmail_account_password_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 445, 235, 20),
+        self.gmail_account_password_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 475, 235, 20),
                                                  self.small_font, "Gmail Account Password")
-        self.notification_email_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 420, 235, 20),
+        self.notification_email_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 450, 235, 20),
                                                  self.small_font, "Notification Recipient Email")
         
         
@@ -121,6 +123,8 @@ class SettingsPage(QtWidgets.QWidget):
             self.onfailed_checkbox.setChecked(True)
         if settings['onlybuyone']:
             self.buy_one_checkbox.setChecked(True)
+        if settings['notify_only_checkbox']:
+            self.notify_only_checkbox.setChecked(True)
         if settings['dont_buy']:
             self.dont_buy_checkbox.setChecked(True)
         if settings['random_delay_start']:
@@ -182,6 +186,7 @@ class SettingsPage(QtWidgets.QWidget):
                     "webhookonfailed":    self.paymentfailed_checkbox.isChecked(),
                     "browseronfailed":    self.onfailed_checkbox.isChecked(),
                     "onlybuyone":         self.buy_one_checkbox.isChecked(),
+                    "notify_only_checkbox": self.notify_only_checkbox.isChecked(),
                     "dont_buy":           self.dont_buy_checkbox.isChecked(),
                     "random_delay_start": self.random_delay_start.text(),
                     "random_delay_stop":  self.random_delay_stop.text(),
@@ -200,9 +205,10 @@ class SettingsPage(QtWidgets.QWidget):
         QtWidgets.QMessageBox.information(self, "Phoenix Bot", "Saved Settings")
 
     def update_settings(self, settings_data):
-        global webhook, webhook_on_browser, webhook_on_order, webhook_on_failed, browser_on_failed, dont_buy, random_delay_start, random_delay_stop, target_user, target_pass, gamestop_user, gamestop_pass
+        global webhook, webhook_on_browser, webhook_on_order, webhook_on_failed, browser_on_failed, dont_buy, notify_only_checkbox, random_delay_start, random_delay_stop, target_user, target_pass, gamestop_user, gamestop_pass
         settings.webhook, settings.webhook_on_browser, settings.webhook_on_order, settings.webhook_on_failed, settings.browser_on_failed, settings.buy_one, settings.dont_buy = settings_data["webhook"], settings_data["webhookonbrowser"], settings_data["webhookonorder"], settings_data["webhookonfailed"], settings_data["browseronfailed"], settings_data['onlybuyone'], settings_data['dont_buy']
 
+        settings.notify_only_checkbox = settings_data['notify_only_checkbox']
         if settings_data.get("random_delay_start", "") != "":
             settings.random_delay_start = settings_data["random_delay_start"]
         if settings_data.get("random_delay_stop", "") != "":

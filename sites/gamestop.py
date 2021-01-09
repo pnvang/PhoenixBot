@@ -28,7 +28,7 @@ class GameStop:
 
         self.status_signal.emit(create_msg(starting_msg, "normal"))
         
-        self.MONITOR_ONLY = True
+        self.MONITOR_ONLY = settings.notify_only_checkbox
         
         if self.MONITOR_ONLY:
             self.monitor()
