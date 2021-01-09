@@ -7,6 +7,9 @@ from chromedriver_py import binary_path as driver_path
 from utils import random_delay, send_webhook, create_msg
 from utils.selenium_utils import change_driver
 import settings, time
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 class GameStop:
     def __init__(self, task_id, status_signal, image_signal, product, profile, proxy, monitor_delay, error_delay, max_price):
@@ -24,11 +27,17 @@ class GameStop:
             starting_msg = "Starting GameStop in dev mode; will not actually checkout."
 
         self.status_signal.emit(create_msg(starting_msg, "normal"))
-        self.login()
-        self.monitor()
-        self.add_to_cart()
-        self.submit_billing()
-        self.submit_order()
+        
+        self.MONITOR_ONLY = True
+        
+        if self.MONITOR_ONLY:
+            self.monitor()
+        else:
+            self.login()
+            self.monitor()
+            self.add_to_cart()
+            self.submit_billing()
+            self.submit_order()
 
 
 
@@ -79,8 +88,18 @@ class GameStop:
 
 
     def monitor(self):
-        wait(self.browser, self.LONG_TIMEOUT).until(lambda _: self.browser.current_url == "https://www.gamestop.com/account/")
-
+        if not self.MONITOR_ONLY:
+            logged_in = False
+            while not logged_in:
+                try: 
+                    wait(self.browser, self.LONG_TIMEOUT).until(lambda _: self.browser.current_url == "https://www.gamestop.com/account/")
+                    self.status_signal.emit(create_msg("Successfully Logged In", "normal"))
+                    logged_in = True
+                except:
+                    self.status_signal.emit(create_msg("Log in failed. Retrying.", "normal"))
+                    self.login()
+                
+        
         self.status_signal.emit(create_msg("Checking Stock..", "normal"))
 
         self.browser.get(self.product)
@@ -92,18 +111,51 @@ class GameStop:
             try: 
                 wait(self.browser, random_delay(self.monitor_delay, settings.random_delay_start, settings.random_delay_stop)).until(EC.element_to_be_clickable((By.XPATH, '//button[@data-buttontext="Add to Cart"]')))
                 add_to_cart_btn = self.browser.find_element_by_xpath('//button[@data-buttontext="Add to Cart"]')
+                home_delivery_option = self.browser.find_element_by_xpath('//input[@value="home"]')
                 add_to_cart_btn.click()
                 time.sleep(1)
-                if not add_to_cart_btn.is_enabled():
+                if not home_delivery_option.is_enabled() & add_to_cart_btn.is_enabled():
                     self.status_signal.emit(create_msg("Waiting For Restock", "normal"))
+                    time.sleep(self.monitor_delay)
                     self.browser.refresh()
                     continue
                 in_stock = True
-                self.status_signal.emit(create_msg("Added to cart", "normal"))
-                self.browser.get("https://www.gamestop.com/cart/")
+                if not self.MONITOR_ONLY:
+                    self.status_signal.emit(create_msg("Added to cart", "normal"))
+                    self.browser.get("https://www.gamestop.com/cart/")
+                else:
+                    self.status_signal.emit(create_msg("Item in stock. Sending notification", "normal"))
+                    self.notify()
             except:
                 self.status_signal.emit(create_msg("Waiting For Restock", "normal"))
                 self.browser.refresh()
+                
+                
+    def notify(self):
+        email = settings.gmail_account_email # the email where you sent the email
+        password = settings.gmail_account_password
+        send_to_email = settings.notification_email # for whom
+        subject = 'GameStop'
+        message = self.product + " %s"
+
+        msg = MIMEMultipart()
+        msg["From"] = email
+        msg["To"] = send_to_email
+        msg["Subject"] = subject
+
+        msg.attach(MIMEText(message, 'plain'))
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(email, password)
+        text = msg.as_string()
+        
+        try:
+            server.sendmail(email, send_to_email, text)
+            server.quit()
+            self.status_signal.emit(create_msg("Notification sent!", "normal"))
+        except:
+            self.status_signal.emit(create_msg("Notification fail to send!", "normal"))
 
 
     def add_to_cart(self):

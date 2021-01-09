@@ -49,10 +49,10 @@ class SettingsPage(QtWidgets.QWidget):
     def setupUi(self, settingspage):
         self.settingspage = settingspage
         self.settingspage.setAttribute(QtCore.Qt.WA_StyledBackground, True)
-        self.settingspage.setGeometry(QtCore.QRect(60, 0, 1041, 601))
+        self.settingspage.setGeometry(QtCore.QRect(60, 0, 1041, 651))
         self.settingspage.setStyleSheet("QComboBox::drop-down {    border: 0px;}QComboBox::down-arrow {    image: url(images/down_icon.png);    width: 14px;    height: 14px;}QComboBox{    padding: 1px 0px 1px 3px;}QLineEdit:focus {   border: none;   outline: none;}")
         self.settings_card = QtWidgets.QWidget(self.settingspage)
-        self.settings_card.setGeometry(QtCore.QRect(30, 70, 941, 501))
+        self.settings_card.setGeometry(QtCore.QRect(30, 70, 941, 551))
         self.settings_card.setFont(self.small_font)
         self.settings_card.setStyleSheet("background-color: #232323;border-radius: 20px;border: 1px solid #2e2d2d;")
 
@@ -62,7 +62,7 @@ class SettingsPage(QtWidgets.QWidget):
                                                  "Webhook")
         
         self.savesettings_btn = QtWidgets.QPushButton(self.settings_card)
-        self.savesettings_btn.setGeometry(QtCore.QRect(190, 450, 86, 32))
+        self.savesettings_btn.setGeometry(QtCore.QRect(190, 475, 86, 32))
         self.savesettings_btn.setFont(self.small_font)
         self.savesettings_btn.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.savesettings_btn.setStyleSheet("color: #FFFFFF;background-color: {};border-radius: 10px;border: 1px solid #2e2d2d;".format(globalStyles["primary"]))
@@ -97,6 +97,13 @@ class SettingsPage(QtWidgets.QWidget):
                                                  self.small_font, "Gamestop.com Username (Email)")
         self.gamestop_pass_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 390, 235, 20),
                                                  self.small_font, "Gamestop.com Password")
+        self.gmail_account_email_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 420, 235, 20),
+                                                 self.small_font, "Gmail Account Email")
+        self.gmail_account_password_edit = self.create_edit(self.settings_card, QtCore.QRect(30, 445, 235, 20),
+                                                 self.small_font, "Gmail Account Password")
+        self.notification_email_edit = self.create_edit(self.settings_card, QtCore.QRect(300, 420, 235, 20),
+                                                 self.small_font, "Notification Recipient Email")
+        
         
         self.set_data()
         QtCore.QMetaObject.connectSlotsByName(settingspage)
@@ -150,6 +157,21 @@ class SettingsPage(QtWidgets.QWidget):
             self.gamestop_pass_edit.setText((Encryption().decrypt(settings["gamestop_pass"].encode("utf-8"))).decode("utf-8"))
         except:
             self.gamestop_pass_edit.setText("")
+            
+        try:
+            self.gmail_account_email_edit.setText(settings["gmail_account_email"])
+        except:
+            self.gmail_account_email_edit.setText("")
+
+        try:
+            self.gmail_account_password_edit.setText((Encryption().decrypt(settings["gmail_account_password"].encode("utf-8"))).decode("utf-8"))
+        except:
+            self.gmail_account_password_edit.setText("")
+            
+        try:
+            self.notification_email_edit.setText(settings["notification_email"])
+        except:
+            self.notification_email_edit.setText("")
 
         self.update_settings(settings)
 
@@ -168,7 +190,10 @@ class SettingsPage(QtWidgets.QWidget):
                     "target_user": self.target_user_edit.text(),
                     "target_pass": Encryption().encrypt(self.target_pass_edit.text()).decode("utf-8"),
                     "gamestop_user": self.gamestop_user_edit.text(),
-                    "gamestop_pass": Encryption().encrypt(self.gamestop_pass_edit.text()).decode("utf-8")}
+                    "gamestop_pass": Encryption().encrypt(self.gamestop_pass_edit.text()).decode("utf-8"),
+                    "gmail_account_email": self.gmail_account_email_edit.text(),
+                    "gmail_account_password": Encryption().encrypt(self.gmail_account_password_edit.text()).decode("utf-8"),
+                    "notification_email": self.notification_email_edit.text()}
 
         write_data("./data/settings.json",settings)
         self.update_settings(settings)
@@ -194,3 +219,10 @@ class SettingsPage(QtWidgets.QWidget):
             settings.gamestop_user = settings_data["gamestop_user"]
         if settings_data.get("gamestop_pass", "") != "":
             settings.gamestop_pass = (Encryption().decrypt(settings_data["gamestop_pass"].encode("utf-8"))).decode("utf-8")
+        if settings_data.get("gmail_account_email", "") != "":
+            settings.gmail_account_email = settings_data["gmail_account_email"]
+        if settings_data.get("gmail_account_password", "") != "":
+            settings.gmail_account_password = (Encryption().decrypt(settings_data["gmail_account_password"].encode("utf-8"))).decode("utf-8")
+        if settings_data.get("notification_email", "") != "":
+            settings.notification_email = settings_data["notification_email"]
+

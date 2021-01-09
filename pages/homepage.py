@@ -25,9 +25,9 @@ class HomePage(QtWidgets.QWidget):
         tasks = self.tasks
         self.homepage = homepage
         self.homepage.setAttribute(QtCore.Qt.WA_StyledBackground, True)
-        self.homepage.setGeometry(QtCore.QRect(60, 0, 1041, 601))
+        self.homepage.setGeometry(QtCore.QRect(60, 0, 1041, 651))
         self.tasks_card = QtWidgets.QWidget(self.homepage)
-        self.tasks_card.setGeometry(QtCore.QRect(30, 110, 991, 461))
+        self.tasks_card.setGeometry(QtCore.QRect(30, 110, 991, 511))
         self.tasks_card.setStyleSheet("background-color: {};border-radius: 20px;border: 1px solid #2e2d2d;".format(globalStyles["backgroundLight"]))
         self.scrollArea = QtWidgets.QScrollArea(self.tasks_card)
         self.scrollArea.setGeometry(QtCore.QRect(20, 30, 951, 421))

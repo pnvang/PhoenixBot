@@ -25,14 +25,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def setupUi(self, MainWindow):
-        MainWindow.setFixedSize(1109, 600)
+        MainWindow.setFixedSize(1109, 650)
         # background color for main UI
         MainWindow.setStyleSheet("background-color: {};".format(globalStyles["backgroundDark"]))
         MainWindow.setWindowTitle("Phoenix Bot")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setStyleSheet("QMessageBox QLabel { color: #FFFFFF; }QMessageBox QPushButton { background-color: %s;color: #FFFFFF;}" % (globalStyles["primary"]) )
         self.sidebar = QtWidgets.QWidget(self.centralwidget)
-        self.sidebar.setGeometry(QtCore.QRect(0, 0, 61, 601))
+        self.sidebar.setGeometry(QtCore.QRect(0, 0, 61, 651))
         # SIDE BAR COLOR
         self.sidebar.setStyleSheet('background-color: {};border-right: 1px solid #2e2d2d;'.format(globalStyles['backgroundLight']))
         self.home_tab = QtWidgets.QWidget(self.sidebar)
