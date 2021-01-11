@@ -10,6 +10,7 @@ import settings, time
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import random
 
 class GameStop:
     def __init__(self, task_id, status_signal, image_signal, product, profile, proxy, monitor_delay, error_delay, max_price):
@@ -99,7 +100,9 @@ class GameStop:
                     self.status_signal.emit(create_msg("Log in failed. Retrying.", "normal"))
                     self.login()
                 
-        
+        if self.MONITOR_ONLY:
+            time.sleep(random.randint(1, 4))
+
         self.status_signal.emit(create_msg("Checking Stock..", "normal"))
 
         self.browser.get(self.product)
@@ -115,8 +118,8 @@ class GameStop:
                 add_to_cart_btn.click()
                 time.sleep(1)
                 if not home_delivery_option.is_enabled() & add_to_cart_btn.is_enabled():
-                    self.status_signal.emit(create_msg("Waiting For Restock", "normal"))
-                    time.sleep(self.monitor_delay)
+                    self.status_signal.emit(create_msg("Out of stock. Rechecking soon.", "normal"))
+                    time.sleep(self.monitor_delay + random.randint(1, 4))
                     self.browser.refresh()
                     continue
                 in_stock = True
