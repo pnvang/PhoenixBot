@@ -116,7 +116,7 @@ class GameStop:
                 wait(self.browser, random_delay(self.monitor_delay, settings.random_delay_start, settings.random_delay_stop)).until(EC.element_to_be_clickable((By.XPATH, '//button[@data-buttontext="Add to Cart"]')))
                 add_to_cart_btn = self.browser.find_element_by_xpath('//button[@data-buttontext="Add to Cart"]')
                 home_delivery_option = self.browser.find_element_by_xpath('//input[@value="home"]')
-                if not home_delivery_option.is_enabled():
+                if not self.MONITOR_ONLY:
                     add_to_cart_btn.click()
                 time.sleep(1)
                 if not home_delivery_option.is_enabled() & add_to_cart_btn.is_enabled():
