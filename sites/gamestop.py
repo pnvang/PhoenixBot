@@ -125,7 +125,7 @@ class GameStop:
                     self.browser.refresh()
                     continue
                 in_stock = True
-                self.browser.save_screenshot("gamestop_"+datetime.now().strftime('%s')+".png")
+                self.browser.save_screenshot("screenshots/gamestop_"+datetime.now().strftime('%s')+".png")
                 if not self.MONITOR_ONLY:
                     self.status_signal.emit(create_msg("Added to cart", "normal"))
                     self.browser.get("https://www.gamestop.com/cart/")

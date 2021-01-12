@@ -16,5 +16,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+screenshots/
+
 # OSX
 .DS_Store
