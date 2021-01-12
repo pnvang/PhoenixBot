@@ -11,6 +11,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import random
+from datetime import datetime
 
 class GameStop:
     def __init__(self, task_id, status_signal, image_signal, product, profile, proxy, monitor_delay, error_delay, max_price):
@@ -115,7 +116,8 @@ class GameStop:
                 wait(self.browser, random_delay(self.monitor_delay, settings.random_delay_start, settings.random_delay_stop)).until(EC.element_to_be_clickable((By.XPATH, '//button[@data-buttontext="Add to Cart"]')))
                 add_to_cart_btn = self.browser.find_element_by_xpath('//button[@data-buttontext="Add to Cart"]')
                 home_delivery_option = self.browser.find_element_by_xpath('//input[@value="home"]')
-                add_to_cart_btn.click()
+                if not home_delivery_option.is_enabled():
+                    add_to_cart_btn.click()
                 time.sleep(1)
                 if not home_delivery_option.is_enabled() & add_to_cart_btn.is_enabled():
                     self.status_signal.emit(create_msg("Out of stock. Rechecking soon.", "normal"))
@@ -123,6 +125,7 @@ class GameStop:
                     self.browser.refresh()
                     continue
                 in_stock = True
+                self.browser.save_screenshot("gamestop_"+datetime.now().strftime('%s')+".png")
                 if not self.MONITOR_ONLY:
                     self.status_signal.emit(create_msg("Added to cart", "normal"))
                     self.browser.get("https://www.gamestop.com/cart/")
