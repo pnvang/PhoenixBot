@@ -128,6 +128,7 @@ class Target:
             self.in_stock = self.check_stock()
             if self.in_stock:
                 self.status_signal.emit(create_msg("Item in stock...", "normal"))
+                self.browser.save_screenshot("screenshots/target_"+datetime.now().strftime('%s')+".png")
                 
                 if self.MONITOR_ONLY:
                     self.notify()
