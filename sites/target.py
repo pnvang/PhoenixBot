@@ -7,6 +7,11 @@ from chromedriver_py import binary_path as driver_path
 from utils import random_delay, send_webhook, create_msg
 from utils.selenium_utils import change_driver
 import settings, time
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import random
+from datetime import datetime
 
 
 class Target:
@@ -36,10 +41,16 @@ class Target:
         if settings.dont_buy:
             starting_msg = "Starting Target in dev mode; will not actually checkout"
         self.status_signal.emit(create_msg(starting_msg, "normal"))
-        self.status_signal.emit(create_msg("Logging In..", "normal"))
-        self.login()
         self.img_found = False
-        self.product_loop()
+        self.MONITOR_ONLY = settings.notify_only_checkbox
+        
+        if self.MONITOR_ONLY:
+            self.monitor()
+        else:
+            self.status_signal.emit(create_msg("Logging In..", "normal"))
+            self.login()
+            self.product_loop()
+            
         send_webhook("OP", "Target", self.profile["profile_name"], self.task_id, self.product_image)
 
     def init_driver(self):
@@ -116,12 +127,43 @@ class Target:
         while not self.in_stock:
             self.in_stock = self.check_stock()
             if self.in_stock:
+                self.status_signal.emit(create_msg("Item in stock...", "normal"))
+                
+                if self.MONITOR_ONLY:
+                    self.notify()
+                    
                 continue
             else:
                 self.status_signal.emit(create_msg("Waiting on Restock", "normal"))
                 time.sleep(random_delay(self.monitor_delay, settings.random_delay_start, settings.random_delay_stop))
                 self.browser.refresh()
 
+    def notify(self):
+        email = settings.gmail_account_email # the email where you sent the email
+        password = settings.gmail_account_password
+        send_to_email = settings.notification_email # for whom
+        subject = 'Target'
+        message = self.product + " %s"
+
+        msg = MIMEMultipart()
+        msg["From"] = email
+        msg["To"] = send_to_email
+        msg["Subject"] = subject
+
+        msg.attach(MIMEText(message, 'plain'))
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(email, password)
+        text = msg.as_string()
+        
+        try:
+            server.sendmail(email, send_to_email, text)
+            server.quit()
+            self.status_signal.emit(create_msg("Notification sent!", "normal"))
+        except:
+            self.status_signal.emit(create_msg("Notification fail to send!", "normal"))
+            
     def atc_and_checkout(self):
         while not self.did_submit:
             for xpath_step in self.xpath_sequence:
