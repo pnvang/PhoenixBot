@@ -13,6 +13,13 @@ from utils.json_utils import find_values
 from utils.selenium_utils import enable_headless
 from utils import create_msg
 
+import time
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import random
+from datetime import datetime
+
 try:
     from Crypto.PublicKey import RSA
     from Crypto.Cipher import PKCS1_OAEP
@@ -63,6 +70,8 @@ class BestBuy:
 
         # TODO: Add Product Image To UI
 
+        self.MONITOR_ONLY = settings.notify_only_checkbox
+
         if proxy:
             self.session.proxies.update(proxy)
 
@@ -94,7 +103,9 @@ class BestBuy:
         options.add_argument(f"User-Agent={settings.userAgent}")
 
         self.status_signal.emit(create_msg("Loading https://www.bestbuy.com/", "normal"))
-        self.login()
+        
+        if not self.MONITOR_ONLY:
+            self.login()
 
         self.browser.get(self.product)
         cookies = self.browser.get_cookies()
@@ -156,12 +167,17 @@ class BestBuy:
             sleep(5)
         self.status_signal.emit(create_msg(f"Item {self.sku_id} is in stock!", "normal"))
         # TODO: Refactor Bird Bot Auto Checkout Functionality. For now, it will just open the cart link when in stock.
-        if self.auto_buy:
-            self.auto_checkout()
+        if not self.MONITOR_ONLY:
+            if self.auto_buy:
+                self.auto_checkout()
+            else:
+                cart_url = self.add_to_cart()
+                self.status_signal.emit(create_msg(f"SKU: {self.sku_id} in stock: {cart_url}", "normal"))
+                sleep(5)
         else:
-            cart_url = self.add_to_cart()
-            self.status_signal.emit(create_msg(f"SKU: {self.sku_id} in stock: {cart_url}", "normal"))
-            sleep(5)
+            self.notify()
+            time.sleep(15)
+            self.check_stock()
 
     def in_stock(self):
         self.status_signal.emit(create_msg("Checking stock", "normal"))
@@ -180,7 +196,8 @@ class BestBuy:
             self.status_signal.emit(create_msg(f"Item state is: {item_state}", "normal"))
             if item_json[0][0]["skuId"] == self.sku_id and item_state in [
                 "ADD_TO_CART",
-                "PRE_ORDER"
+                "PRE_ORDER",
+                "CHECK_STORES"
             ]:
                 return True
             else:
@@ -195,6 +212,32 @@ class BestBuy:
             else:
                 self.status_signal.emit(create_msg("Item is out of stock", "normal"))
                 return False
+
+    def notify(self):
+        email = settings.gmail_account_email # the email where you sent the email
+        password = settings.gmail_account_password
+        send_to_email = settings.notification_email # for whom
+        subject = 'BestBuy'
+        message = self.product + " %s"
+
+        msg = MIMEMultipart()
+        msg["From"] = email
+        msg["To"] = send_to_email
+        msg["Subject"] = subject
+
+        msg.attach(MIMEText(message, 'plain'))
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(email, password)
+        text = msg.as_string()
+        
+        try:
+            server.sendmail(email, send_to_email, text)
+            server.quit()
+            self.status_signal.emit(create_msg("Notification sent!", "normal"))
+        except:
+            self.status_signal.emit(create_msg("Notification fail to send!", "normal"))
 
     def add_to_cart(self):
         webbrowser.open_new(BEST_BUY_CART_URL.format(sku=self.sku_id))

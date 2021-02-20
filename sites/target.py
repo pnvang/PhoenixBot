@@ -71,14 +71,28 @@ class Target:
         return browser
 
     def login(self):
+        logged_in = False
+        
         self.browser.get("https://www.target.com")
         self.browser.find_element_by_id("account").click()
         wait(self.browser, self.TIMEOUT_LONG).until(EC.element_to_be_clickable((By.ID, "accountNav-signIn"))).click()
-        wait(self.browser, self.TIMEOUT_LONG).until(EC.presence_of_element_located((By.ID, "username")))
-        self.fill_and_authenticate()
+        
+        while not logged_in:
+            try:
+                wait(self.browser, self.TIMEOUT_LONG).until(EC.presence_of_element_located((By.ID, "username")))
+                self.fill_and_authenticate()
+            
+                # Gives it time for the login to complete
+                time.sleep(random_delay(self.monitor_delay, settings.random_delay_start, settings.random_delay_stop))
+                
+                wait(self.browser, self.TIMEOUT_LONG).until(EC.presence_of_element_located((By.ID, "accountNav-account")))
 
-        # Gives it time for the login to complete
-        time.sleep(random_delay(self.monitor_delay, settings.random_delay_start, settings.random_delay_stop))
+                logged_in = True
+            except Exception as e:
+                self.status_signal.emit(create_msg("Log In Failed.. Retrying", "normal"))
+                self.browser.refresh()
+                continue
+                
 
     def fill_and_authenticate(self):
         if self.browser.find_elements_by_id('username'):
@@ -125,19 +139,25 @@ class Target:
                 continue
 
         while not self.in_stock:
-            self.in_stock = self.check_stock()
-            if self.in_stock:
-                self.status_signal.emit(create_msg("Item in stock...", "normal"))
-                self.browser.save_screenshot("screenshots/target_"+datetime.now().strftime('%s')+".png")
-                
-                if self.MONITOR_ONLY:
-                    self.notify()
+            try:
+                self.in_stock = self.check_stock()
+                if self.in_stock:
+                    self.status_signal.emit(create_msg("Item in stock...", "normal"))
+                    self.browser.save_screenshot("screenshots/target_"+datetime.now().strftime('%s')+".png")
                     
+                    if self.MONITOR_ONLY:
+                        self.notify()
+                    
+                    time.sleep(15)
+                    self.in_stock = False
+                    
+                    continue
+                else:
+                    self.status_signal.emit(create_msg("Waiting on Restock", "normal"))
+                    time.sleep(random_delay(self.monitor_delay, settings.random_delay_start, settings.random_delay_stop))
+                    self.browser.refresh()
+            except Exception as e:
                 continue
-            else:
-                self.status_signal.emit(create_msg("Waiting on Restock", "normal"))
-                time.sleep(random_delay(self.monitor_delay, settings.random_delay_start, settings.random_delay_stop))
-                self.browser.refresh()
 
     def notify(self):
         email = settings.gmail_account_email # the email where you sent the email
